@@ -1,0 +1,321 @@
+import 'package:flutter/material.dart';
+
+void main() => runApp(BillTrackerApp());
+
+class BillTrackerApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      theme: ThemeData(
+        primarySwatch: Colors.green,
+        fontFamily: 'Arial',
+      ),
+      home: BillTracker(),
+    );
+  }
+}
+
+class Bill {
+  final String name;
+  final double amount;
+  final DateTime dueDate;
+  bool isPaid;
+
+  Bill({required this.name, required this.amount, required this.dueDate, this.isPaid = false});
+}
+
+class BillTracker extends StatefulWidget {
+  @override
+  _BillTrackerState createState() => _BillTrackerState();
+}
+
+class _BillTrackerState extends State<BillTracker> {
+  double currentBalance = 1355.02;
+  List<Bill> bills = [
+    Bill(name: 'Electricity Bill', amount: 75.00, dueDate: DateTime(2024, 9, 1)),
+    Bill(name: 'Internet Bill', amount: 50.00, dueDate: DateTime(2024, 9, 5)),
+    Bill(name: 'Credit Card Payment', amount: 100.00, dueDate: DateTime(2024, 9, 10)),
+    Bill(name: 'Rent (Shared)', amount: 500.00, dueDate: DateTime(2024, 9, 1)),
+  ];
+
+  List<Map<String, dynamic>> checkbook = [];
+
+  void togglePaidStatus(int index) {
+    setState(() {
+      if (!bills[index].isPaid) {
+        currentBalance -= bills[index].amount;
+        checkbook.add({
+          'name': 'Paid ${bills[index].name}',
+          'amount': bills[index].amount,
+          'date': DateTime.now(),
+        });
+      } else {
+        currentBalance += bills[index].amount;
+        checkbook.removeWhere((entry) => entry['name'] == 'Paid ${bills[index].name}');
+      }
+      bills[index].isPaid = !bills[index].isPaid;
+    });
+  }
+
+  void addNewBill(String name, double amount) {
+    setState(() {
+      bills.add(Bill(name: name, amount: amount, dueDate: DateTime.now().add(Duration(days: 30))));
+    });
+  }
+
+  void addPurchase(String name, double amount) {
+    setState(() {
+      currentBalance -= amount;
+      checkbook.add({
+        'name': name,
+        'amount': -amount,
+        'date': DateTime.now(),
+      });
+    });
+  }
+
+  void addIncome(double amount) {
+    setState(() {
+      currentBalance += amount;
+      checkbook.add({
+        'name': 'Income',
+        'amount': amount,
+        'date': DateTime.now(),
+      });
+    });
+  }
+
+  void showAddBillDialog() {
+    String billName = '';
+    double billAmount = 0.0;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Add Bill'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: InputDecoration(labelText: 'Bill Name'),
+                onChanged: (value) {
+                  billName = value;
+                },
+              ),
+              TextField(
+                decoration: InputDecoration(labelText: 'Bill Amount'),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  billAmount = double.tryParse(value) ?? 0.0;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                addNewBill(billName, billAmount);
+                Navigator.of(context).pop();
+              },
+              child: Text('Add Bill'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showAddPurchaseDialog() {
+    String purchaseName = '';
+    double purchaseAmount = 0.0;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Add Purchase'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: InputDecoration(labelText: 'Purchase Name'),
+                onChanged: (value) {
+                  purchaseName = value;
+                },
+              ),
+              TextField(
+                decoration: InputDecoration(labelText: 'Purchase Amount'),
+                keyboardType: TextInputType.number,
+                onChanged: (value) {
+                  purchaseAmount = double.tryParse(value) ?? 0.0;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                addPurchase(purchaseName, purchaseAmount);
+                Navigator.of(context).pop();
+              },
+              child: Text('Add Purchase'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void showAddIncomeDialog() {
+    double incomeAmount = 0.0;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Add Income'),
+          content: TextField(
+            decoration: InputDecoration(labelText: 'Income Amount'),
+            keyboardType: TextInputType.number,
+            onChanged: (value) {
+              incomeAmount = double.tryParse(value) ?? 0.0;
+            },
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                addIncome(incomeAmount);
+                Navigator.of(context).pop();
+              },
+              child: Text('Add Income'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey[200],
+      appBar: AppBar(
+        title: Text('Bill Tracker & Checkbook'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Current Balance: \$${currentBalance.toStringAsFixed(2)}',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: currentBalance >= 0 ? Colors.green : Colors.red,
+              ),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Bills',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            SizedBox(height: 10),
+            Expanded(
+              child: ListView.builder(
+                itemCount: bills.length,
+                itemBuilder: (context, index) {
+                  return Card(
+                    margin: EdgeInsets.symmetric(vertical: 8),
+                    elevation: 4,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    color: bills[index].isPaid ? Colors.green[100] : Colors.white,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.all(16),
+                      title: Text(
+                        bills[index].name,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: bills[index].isPaid ? Colors.green[900] : Colors.black,
+                        ),
+                      ),
+                      subtitle: Text(
+                        'Amount: \$${bills[index].amount.toStringAsFixed(2)} | Due: ${bills[index].dueDate.toLocal().toIso8601String().substring(0, 10)}',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: bills[index].isPaid ? Colors.green[900] : Colors.black54,
+                        ),
+                      ),
+                      trailing: Checkbox(
+                        value: bills[index].isPaid,
+                        onChanged: (bool? value) {
+                          togglePaidStatus(index);
+                        },
+                        activeColor: Colors.green,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            SizedBox(height: 20),
+            Text(
+              'Checkbook',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: checkbook.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(checkbook[index]['name']),
+                    subtitle: Text(
+                        'Amount: \$${checkbook[index]['amount'].toStringAsFixed(2)} | Date: ${checkbook[index]['date'].toLocal().toIso8601String().substring(0, 10)}'),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          FloatingActionButton(
+            onPressed: () {
+              showAddBillDialog();
+            },
+            child: Icon(Icons.add),
+            backgroundColor: Colors.purple,
+          ),
+          SizedBox(height: 10),
+          FloatingActionButton(
+            onPressed: () {
+              showAddPurchaseDialog();
+            },
+            child: Icon(Icons.shopping_cart),
+            backgroundColor: Colors.blue,
+          ),
+          SizedBox(height: 10),
+          FloatingActionButton(
+            onPressed: () {
+              showAddIncomeDialog();
+            },
+            child: Icon(Icons.attach_money),
+            backgroundColor: Colors.green,
+          ),
+        ],
+      ),
+    );
+  }
+}
