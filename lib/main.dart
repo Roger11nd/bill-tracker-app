@@ -61,46 +61,69 @@ class _BillCheckbookHomeState extends State<BillCheckbookHome> {
   }
 
   void showAddBillDialog() {
-    String name = '';
-    double amount = 0.0;
-    DateTime dueDate = DateTime.now();
+  String name = '';
+  double amount = 0.0;
+  DateTime dueDate = DateTime.now();
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Add New Bill'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(labelText: 'Bill Name'),
-                onChanged: (value) {
-                  name = value;
-                },
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Amount'),
-                keyboardType: TextInputType.number,
-                onChanged: (value) {
-                  amount = double.parse(value);
-                },
-              ),
-              TextField(
-                decoration: InputDecoration(labelText: 'Due Date (YYYY-MM-DD)'),
-                onChanged: (value) {
-                  dueDate = DateTime.parse(value);
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text('Add New Bill'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              decoration: InputDecoration(labelText: 'Bill Name'),
+              onChanged: (value) {
+                name = value;
               },
-              child: Text('Cancel'),
             ),
+            TextField(
+              decoration: InputDecoration(labelText: 'Amount'),
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                amount = double.parse(value);
+              },
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final DateTime? picked = await showDatePicker(
+                  context: context,
+                  initialDate: dueDate,
+                  firstDate: DateTime(2000),
+                  lastDate: DateTime(2101),
+                );
+                if (picked != null && picked != dueDate) {
+                  setState(() {
+                    dueDate = picked;
+                  });
+                }
+              },
+              child: Text('Select Due Date'),
+            ),
+            Text('Selected date: ${dueDate.toLocal()}'.split(' ')[0]),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              addBill(name, amount, dueDate);
+              Navigator.of(context).pop();
+            },
+            child: Text('Add'),
+          ),
+        ],
+      );
+    },
+  );
+}
             ElevatedButton(
               onPressed: () {
                 addBill(name, amount, dueDate);
